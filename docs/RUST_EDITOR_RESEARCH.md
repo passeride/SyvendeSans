@@ -116,7 +116,7 @@ Kilde: [thejacedev/Noteriv](https://github.com/thejacedev/Noteriv), MIT, aktiv. 
 **Arkitekturstrategi: modulær greenfield med forsiktig bibliotekgjenbruk.**
 
 - Opprett et lite SyvendeSans Rust-workspace. Ikke kopier store kodebaser nå.
-- Kjør en **to-dagers arkitekturspike** (arbeidsrekkefølge, ikke garantert tidsestimat) der vi kompilere/tester `scoria-markdown` og `scoria-text` ved pinet SHA og sammenligner `pulldown-cmark`/`comrak`.
+- Kjør en **avgrenset arkitekturspike** der vi kompilerer og tester `scoria-markdown` og `scoria-text` ved pinet SHA og sammenligner `pulldown-cmark`/`comrak`.
 - Bygg to tynne UI-prototyper for **samme fil**: Dioxus + CodeMirror, og Tauri 2 + CodeMirror. Hvis ønsket om ren Rust-UI er viktigst, legg til egui/eframe som tredje. Test fysisk Android/iOS før hovedvalg.
 - Prioriter byte-bevarende åpning/lagring og riktig linkmodell før visuelle Obsidian-funksjoner.
 - Implementér synk som en uavhengig protokoll med lokal kø, serverrevisjoner, CAS og konfliktkopier; **ikke adopter Noterivs last-write-wins WebDAV/folder som standard**.
