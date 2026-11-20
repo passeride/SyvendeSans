@@ -198,7 +198,7 @@ function showActive() {
   if (editor.state !== active.state) editor.setState(active.state);
   get('document').scrollTop = active.scroll ?? 0;
   if (active.mode === 'read') void preview(active);
-  status(active.error ?? (active.saving ? 'Synker …' : active.dirty ? 'Utkast · synk med Synk nå' : 'Synket med GitHub'));
+  status(active.error ?? (active.saving ? 'Synker …' : active.dirty ? 'Utkast · synk med Synk nå' : (ref === 'demo' ? 'Lagret i demoen' : 'Synket med GitHub')));
 }
 
 async function preview(tab) {
@@ -271,7 +271,7 @@ async function saveNote() {
     tab.saving = false;
     if (tab === active) {
       get('save').disabled = !tab.dirty;
-      status(tab.error ?? (tab.dirty ? 'Nyere endringer ligger i utkastet.' : 'Synket med GitHub'));
+      status(tab.error ?? (tab.dirty ? 'Nyere endringer ligger i utkastet.' : (ref === 'demo' ? 'Lagret i demoen' : 'Synket med GitHub')));
     }
     persist();
   }
@@ -593,3 +593,12 @@ on('new', 'click', newNote);
 on('settings', 'click', openSettings);
 on('save', 'click', saveNote);
 on('mode', 'click', switchMode);
+
+on('demo', 'click', async () => {
+  try {
+    const { demoVault } = await import('./demo.js');
+    const client = demoVault();
+    hydrateWorkspace(client, 'Eksempelvault', await client.connect());
+    if (!active) openNote('Innboks/Velkommen.md');
+  } catch (error) { status(error.message); }
+});
