@@ -1,0 +1,29 @@
+{
+  "name": "syvende-sans",
+  "version": "0.1.0",
+  "description": "**SyvendeSans** er et planlagt lokal-først, selvhostet Markdown-notatverktøy i Rust med mål om kompatibilitet med eksisterende Obsidian-vaults.",
+  "scripts": {
+    "test": "node --test",
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build --base=./",
+    "tauri": "tauri"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/passeride/SyvendeSans.git"
+  },
+  "type": "module",
+  "dependencies": {
+    "@codemirror/lang-markdown": "^6.5.2",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.15",
+    "codemirror": "^6.0.2",
+    "dompurify": "^3.4.18",
+    "marked": "^18.2.1"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.12.6",
+    "vite": "^8.3.8"
+  },
+  "private": true
+}

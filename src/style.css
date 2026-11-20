@@ -1,0 +1,28 @@
+:root { color-scheme: light dark; font: 1rem system-ui, sans-serif; --line: color-mix(in srgb, currentColor 22%, transparent); }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0 auto; padding: 1rem; max-width: 84rem; }
+header, form, .toolbar { display: flex; gap: .75rem; flex-wrap: wrap; align-items: end; }
+header { justify-content: space-between; align-items: center; }
+h1 { font-size: 1.6rem; margin: .4rem 0; }
+h2 { font-size: 1.2rem; overflow-wrap: anywhere; }
+label { display: grid; gap: .3rem; }
+input, button { font: inherit; border: 1px solid var(--line); border-radius: .35rem; padding: .55rem; }
+button { cursor: pointer; }
+main { display: grid; grid-template-columns: minmax(13rem, 23%) minmax(0, 1fr); gap: 1rem; }
+aside { border-inline-end: 1px solid var(--line); padding-inline-end: .75rem; }
+aside input { width: 100%; }
+aside > button { margin-top: .5rem; }
+ul#notes { list-style: none; padding: 0; max-height: 70vh; overflow: auto; }
+#notes button { width: 100%; text-align: start; overflow-wrap: anywhere; border: 0; background: transparent; }
+#notes button[aria-current] { background: var(--line); }
+#editor, #preview { margin-top: .75rem; border: 1px solid var(--line); border-radius: .4rem; }
+.cm-editor { min-height: 55vh; max-height: 75vh; }
+#preview { padding: .75rem; overflow-wrap: anywhere; overflow: auto; }
+#preview pre { overflow: auto; }
+@media (max-width: 650px) {
+  main { grid-template-columns: 1fr; }
+  aside { border-inline-end: 0; border-block-end: 1px solid var(--line); }
+  ul#notes { max-height: 24vh; }
+  form { align-items: stretch; flex-direction: column; }
+}

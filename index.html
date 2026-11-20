@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="nb">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.github.com; img-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>SyvendeSans</title>
+  <script type="module" src="/src/main.js"></script>
+</head>
+<body>
+  <header><h1>SyvendeSans</h1><button id="disconnect" type="button" hidden>Koble fra</button></header>
+  <form id="connection">
+    <label>GitHub-repo <input id="repo" placeholder="eier/repo" required></label>
+    <label>Gren <input id="branch" placeholder="Standardgren hvis tom"></label>
+    <label>Tilgangstoken <input id="token" type="password" autocomplete="off" spellcheck="false"></label>
+    <button>Koble til</button>
+  </form>
+  <p id="status" role="status" aria-live="polite">Koble til et GitHub-repo for å åpne notatene.</p>
+  <main id="workspace" hidden>
+    <aside>
+      <label>Finn notat <input id="filter" type="search"></label>
+      <button id="new" type="button">Nytt notat</button>
+      <ul id="notes"></ul>
+    </aside>
+    <section aria-label="Notat">
+      <h2 id="title">Velg et notat</h2>
+      <div id="document" hidden>
+        <div class="toolbar">
+          <button id="save" type="button">Lagre til GitHub</button>
+          <button id="preview-toggle" type="button" aria-pressed="false">Forhåndsvisning</button>
+        </div>
+        <div id="editor"></div>
+        <article id="preview" hidden></article>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

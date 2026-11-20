@@ -21,4 +21,29 @@ Gjenbruk de beste komponentene fremfor å låse oss til en full desktop-fork. Vi
 
 Synkronisering bygges uavhengig av UI i Rust. Nettleseren er en autentisert leseklient til serveren og trenger ikke egen synk- eller VPN-motor.
 
-**Status:** Forprosjekt / design. Det finnes foreløpig ingen ferdig klient, server eller installasjonspakker.
+**Status:** Tidlig GitHub-prototype for web, Windows, Linux og Android. NAS-server og lokal-først-synk er planlagt.
+
+## Test GitHub-prototypen
+
+Bruk Node.js 24 og kjør `npm ci` og `npm run dev`. For en statisk build, kjør
+`npm run build` og server mappen `dist/` via HTTP(S).
+[Build test apps](../../actions/workflows/build.yml) laster opp webbuild, Windows NSIS-installer,
+Linux `.deb` og Android debug-APK. Web kan også publiseres fra `main` ved å velge
+**Settings → Pages → Source → GitHub Actions** og kjøre **Publish web preview**.
+Windows-testinstalleren er usignert. Android-testpakken bruker debug-signering.
+
+Koble til et eksisterende vault med `eier/repo`, ønsket gren og et
+[fine-grained GitHub-token](https://github.com/settings/personal-access-tokens/new)
+begrenset til det vault-repoet. Gi **Contents: Read-only** for lesetesten og
+**Contents: Read and write** for oppretting og redigering. Start skrivetesten på en
+egen gren. Hvert klikk på **Lagre til GitHub** oppretter en commit på den valgte
+grenen. Lagret blob-SHA brukes til å avvise overskriving fra en utdatert klient.
+
+Tokenet holdes i klientens minne fram til frakobling eller reload. Appen kobler
+direkte til GitHub REST API over HTTPS. GitHub Pages trenger ingen vault-tilgang
+eller hemmeligheter. Workflowene bygger fra dette repoet alene.
+
+Denne prototypen tilbyr søk på notatsti, Markdown-kilde, forhåndsvisning og enkel
+oppretting/lagring. Obsidian-spesifikke wikilenker, vedlegg og backlinks ligger i
+arbeidsplanen. Usendte endringer ligger i minnet. Lokale persistente utkast,
+offline-synk og kontinuerlig synk mellom klienter er fremtidig arbeid.
