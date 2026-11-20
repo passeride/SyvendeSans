@@ -77,10 +77,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android,x86_64-linux-android
-      - name: Install Android NDK
-        run: |
-          sdkmanager "ndk;$NDK_VERSION"
-          echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools platforms;android-36 build-tools;36.0.0 ndk;27.2.12479018
+      - name: Configure Android NDK
+        run: echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
       - run: npm ci
       - run: npm run tauri -- android init --ci --skip-targets-install
       - run: npm run tauri -- android build --ci --debug --apk --target aarch64 x86_64
