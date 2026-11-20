@@ -1,38 +1,55 @@
 <!doctype html>
 <html lang="nb">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.github.com; img-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
-  <title>SyvendeSans</title>
-  <script type="module" src="/src/main.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.github.com; img-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>SyvendeSans</title>
+<script type="module" src="/src/main.js"></script>
 </head>
 <body>
-  <header><h1>SyvendeSans</h1><button id="disconnect" type="button" hidden>Koble fra</button></header>
-  <form id="connection">
-    <label>GitHub-repo <input id="repo" placeholder="eier/repo" required></label>
-    <label>Gren <input id="branch" placeholder="Standardgren hvis tom"></label>
-    <label>Tilgangstoken <input id="token" type="password" autocomplete="off" spellcheck="false"></label>
-    <button>Koble til</button>
-  </form>
-  <p id="status" role="status" aria-live="polite">Koble til et GitHub-repo for å åpne notatene.</p>
-  <main id="workspace" hidden>
-    <aside>
-      <label>Finn notat <input id="filter" type="search"></label>
-      <button id="new" type="button">Nytt notat</button>
-      <ul id="notes"></ul>
-    </aside>
-    <section aria-label="Notat">
-      <h2 id="title">Velg et notat</h2>
-      <div id="document" hidden>
-        <div class="toolbar">
-          <button id="save" type="button">Lagre til GitHub</button>
-          <button id="preview-toggle" type="button" aria-pressed="false">Forhåndsvisning</button>
-        </div>
-        <div id="editor"></div>
-        <article id="preview" hidden></article>
-      </div>
-    </section>
-  </main>
-</body>
-</html>
+<header class="top">
+<button id="sidebar" aria-label="Vis eller skjul filer" aria-expanded="true" hidden>☰</button>
+<strong>SyvendeSans</strong><span id="vault-name"></span>
+<span class="spacer"></span>
+<button id="find" hidden>Finn notat</button><button id="command" hidden>Kommandoer</button>
+<button id="mobile-tabs" hidden>Faner</button>
+</header>
+<main id="login">
+<h1>Åpne vault</h1>
+<form id="connection">
+<label>GitHub-repo<input id="repo" required placeholder="eier/repo"></label>
+<label>Gren<input id="branch" placeholder="Standardgren"></label>
+<label>Tilgangstoken<input id="token" type="password" autocomplete="off"></label>
+<label class="check"><input id="remember" type="checkbox"> Husk token kryptert på denne enheten</label>
+<label id="pass-label" hidden>Passfrase for å låse opp<input id="pass" type="password" autocomplete="current-password"></label>
+<div class="actions"><button class="primary" type="submit">Åpne vault</button><button id="forget" type="button" hidden>Glem lagret token</button></div>
+</form>
+</main>
+<main id="workspace" hidden>
+<aside id="files" aria-label="Vault">
+<div class="files-top"><strong>Filer</strong><button id="new" aria-label="Nytt notat">＋</button></div>
+<div class="file-modes"><button id="tree-mode" aria-pressed="true">Mapper</button><button id="recent-mode" aria-pressed="false">Nylig</button></div>
+<div id="tree" tabindex="0" aria-label="Filer og mapper"></div>
+<button id="settings">Innstillinger</button>
+</aside>
+<section class="work">
+<div id="tabs" role="tablist" aria-label="Åpne notater"></div>
+<div id="empty"><h1>Arbeidsflate</h1><button id="open-empty">Finn notat</button></div>
+<div id="document" role="tabpanel" hidden>
+<div class="note-tools"><span id="crumb"></span><button id="mode">Les</button><button id="save">Synk nå</button></div>
+<h1 id="title"></h1><div id="editor"></div><article id="preview" hidden></article>
+</div>
+</section>
+</main>
+<footer id="status" role="status" aria-live="polite"></footer>
+<dialog id="palette"><form method="dialog" class="dialog-head"><strong id="palette-title"></strong><button aria-label="Lukk">×</button></form><input id="query" aria-label="Søk"><div id="results"></div></dialog>
+<dialog id="new-dialog"><form id="new-form"><label>Sti til nytt notat<input id="new-path" required></label><div class="actions"><button type="submit" class="primary">Opprett</button><button id="cancel-new" type="button">Avbryt</button></div></form></dialog>
+<dialog id="preferences"><form id="preferences-form"><h2>Vault-innstillinger</h2>
+<label>Tema<select name="theme"><option value="system">System</option><option value="dark">Mørkt</option><option value="light">Lyst</option></select></label>
+<label>Innboksmappe<input name="inbox"></label>
+<label>Standardmodus<select name="defaultMode"><option value="edit">Rediger</option><option value="read">Les</option></select></label>
+<label>Tekstbredde<select name="width"><option value="normal">Normal</option><option value="wide">Bred</option></select></label>
+<div class="actions"><button type="submit" class="primary">Lagre i vault</button><button type="button" id="cancel-settings">Lukk</button></div>
+<p id="settings-status" role="status"></p></form></dialog>
+</body></html>

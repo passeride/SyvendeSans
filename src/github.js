@@ -28,7 +28,9 @@ export function gitHubVault(repository, token, request = fetch) {
         409: 'Filen kan ha blitt endret på GitHub. Kopier teksten eller flett med siste versjon før nytt forsøk.',
         422: 'GitHub avviste lagringen. Sjekk om filen allerede finnes eller om grenen er beskyttet.',
       }[response.status];
-      throw new Error('GitHub svarte ' + response.status + '. ' + (message ?? 'Prøv igjen.'));
+      const error = new Error('GitHub svarte ' + response.status + '. ' + (message ?? 'Prøv igjen.'));
+      error.status = response.status;
+      throw error;
     }
     return response.json();
   }

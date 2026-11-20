@@ -39,11 +39,14 @@ begrenset til det vault-repoet. Gi **Contents: Read-only** for lesetesten og
 egen gren. Hvert klikk på **Lagre til GitHub** oppretter en commit på den valgte
 grenen. Lagret blob-SHA brukes til å avvise overskriving fra en utdatert klient.
 
-Tokenet holdes i klientens minne fram til frakobling eller reload. Appen kobler
+Velg «Husk token kryptert på denne enheten» og lag en passfrase for å slippe å
+lime inn token på nytt. Du låser opp med passfrasen ved neste oppstart. Appen kobler
 direkte til GitHub REST API over HTTPS. GitHub Pages trenger ingen vault-tilgang
 eller hemmeligheter. Workflowene bygger fra dette repoet alene.
 
-Denne prototypen tilbyr søk på notatsti, Markdown-kilde, forhåndsvisning og enkel
-oppretting/lagring. Obsidian-spesifikke wikilenker, vedlegg og backlinks ligger i
-arbeidsplanen. Usendte endringer ligger i minnet. Lokale persistente utkast,
-offline-synk og kontinuerlig synk mellom klienter er fremtidig arbeid.
+Arbeidsflaten har mappetre, faner, hurtigåpner og kommandopalett. Faner og utkast
+gjenopprettes fra lokalt lager. Tema, innboks, standardmodus og tekstbredde
+lagres i `.syvende-sans/settings.json` på vaultets valgte gren. Bruk «Synk nå»
+eller Ctrl+S for å lagre notater. Se [UX-skissen](docs/UX_ARBEIDSFLATE.md) for
+videre arbeid med innlogging, appinnstillinger og synk. Wikilenker, vedlegg og
+backlinks ligger i arbeidsplanen.
