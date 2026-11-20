@@ -1,0 +1,9 @@
+[submodule "vendor/noteriv"]
+	path = vendor/noteriv
+	url = https://github.com/thejacedev/Noteriv.git
+	branch = main
+
+[submodule "vendor/syncup"]
+	path = vendor/syncup
+	url = https://github.com/sidtech-solutions/syncup.git
+	branch = master
