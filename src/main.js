@@ -4,6 +4,7 @@ import { markdown } from '@codemirror/lang-markdown';
 import { EditorState } from '@codemirror/state';
 import { gitHubVault, notePath } from './github.js';
 import { readLocal, seal, unseal } from './storage.js';
+import { wikilink, resolveWikilink } from './wikilinks.js';
 import './style.css';
 
 const get = id => document.getElementById(id);
@@ -17,7 +18,7 @@ const connectionKey = 'syv.connection';
 let settings = defaults, settingsSha, settingsReady = Promise.resolve(), vault, ref, sessionKey;
 let tabs = [], active, paths = [], searchIndex = [], rows = [], folders, recent = [], expanded = new Set();
 let recentMode = false, paletteMode, selected = 0, results = [], storeTimer, searchTimer, saveSettingsBusy = false;
-let sidebarTouched = false;
+let sidebarTouched = false, linkCandidates = [];
 const narrow = matchMedia('(max-width:700px)');
 const extensions = [
   basicSetup, markdown(), EditorView.lineWrapping,
@@ -27,8 +28,10 @@ const extensions = [
     if (!active?.state) return;
     active.state = update.state;
     if (update.docChanged) {
+      active.localSaved = false;
       active.dirty = true;
       get('save').disabled = active.saving;
+      renderLocalStatus();
     }
     schedulePersist();
   }),
@@ -49,8 +52,17 @@ function persist() {
         scroll: tab.scroll,
       })),
     }));
+    for (const tab of tabs) tab.localSaved = true;
+    renderLocalStatus();
   } catch { status('Lokalt lager er fullt eller utilgjengelig. Synk viktige utkast før du lukker appen.'); }
 }
+function renderLocalStatus() {
+  const indicator = get('local-status');
+  indicator.textContent = active?.dirty
+    ? (active.localSaved ? 'Lagret på denne enheten · venter på synk' : 'Lagrer utkast på enheten …')
+    : '';
+}
+
 function schedulePersist() {
   clearTimeout(storeTimer);
   storeTimer = setTimeout(persist, 500);
@@ -181,6 +193,7 @@ function activate(tab) {
 }
 
 function showActive() {
+  renderLocalStatus();
   get('document').hidden = !active;
   get('empty').hidden = !!active;
   if (!active) return;
@@ -198,20 +211,32 @@ function showActive() {
   if (editor.state !== active.state) editor.setState(active.state);
   get('document').scrollTop = active.scroll ?? 0;
   if (active.mode === 'read') void preview(active);
-  status(active.error ?? (active.saving ? 'Synker …' : active.dirty ? 'Utkast · synk med Synk nå' : (ref === 'demo' ? 'Lagret i demoen' : 'Synket med GitHub')));
+  status(active.error ?? (active.saving ? 'Synker …' : active.dirty ? 'Bruk Synk nå for å lagre til vaultet' : (ref === 'demo' ? 'Lagret i demoen' : 'Synket med GitHub')));
 }
 
 async function preview(tab) {
   const target = get('preview');
   const state = tab.state;
   target.replaceChildren();
-  const [{ marked }, { default: DOMPurify }] = await Promise.all([import('marked'), import('dompurify')]);
+  const [{ Marked }, { default: DOMPurify }] = await Promise.all([import('marked'), import('dompurify')]);
   if (active !== tab || tab.mode !== 'read' || tab.state !== state) return;
-  target.innerHTML = DOMPurify.sanitize(marked.parse(state.doc.toString()), {
+  target.innerHTML = DOMPurify.sanitize(new Marked({ extensions: [wikilink] }).parse(state.doc.toString()), {
     FORBID_TAGS: ['img', 'audio', 'video', 'source', 'style', 'input', 'form', 'svg', 'math'],
     FORBID_ATTR: ['style', 'src', 'srcset', 'poster', 'ping'],
   });
   for (const link of target.querySelectorAll('a')) link.removeAttribute('href');
+  for (const link of target.querySelectorAll('button[data-wikilink]')) {
+    link.onclick = () => {
+      const matches = resolveWikilink(link.dataset.wikilink, tab.path, paths);
+      if (matches.length === 1) {
+        openNote(matches[0]);
+        return;
+      }
+      if (!matches.length) return status('Fant ikke notatet «' + link.dataset.wikilink + '».');
+      linkCandidates = matches;
+      showPalette('links');
+    };
+  }
 }
 
 async function loadNote(tab) {
@@ -319,6 +344,7 @@ function showLogin() {
   if (tabs.some(tab => tab.saving) || saveSettingsBusy) return status('Vent til den pågående synken er ferdig.');
   persist();
   active = undefined;
+  renderLocalStatus();
   tabs = [];
   vault = undefined;
   sessionKey = undefined;
@@ -326,7 +352,7 @@ function showLogin() {
   editor.setState(makeState(''));
   get('workspace').hidden = true;
   get('login').hidden = false;
-  for (const id of ['sidebar', 'find', 'command', 'mobile-tabs']) get(id).hidden = true;
+  for (const id of ['sidebar', 'find', 'command', 'mobile-tabs', 'quick-note']) get(id).hidden = true;
   get('vault-name').textContent = '';
   refreshLogin();
   get('repo').focus();
@@ -388,7 +414,7 @@ function hydrateWorkspace(client, repo, connected) {
   ref = connected.ref;
   sessionKey = 'syv.workspace.' + repo.toLowerCase() + ':' + ref;
   const previous = readLocal(sessionKey, {});
-  tabs = previous.tabs ?? [];
+  tabs = (previous.tabs ?? []).map(tab => ({ ...tab, localSaved: true }));
   paths = connected.paths;
   expanded = new Set(previous.expanded);
   recent = previous.recent ?? [];
@@ -399,7 +425,7 @@ function hydrateWorkspace(client, repo, connected) {
   get('vault-name').textContent = repo + ' · ' + ref;
   get('login').hidden = true;
   get('workspace').hidden = false;
-  for (const id of ['sidebar', 'find', 'command', 'mobile-tabs']) get(id).hidden = false;
+  for (const id of ['sidebar', 'find', 'command', 'mobile-tabs', 'quick-note']) get(id).hidden = false;
   setSidebar(!narrow.matches && settings.sidebarOpen !== false);
   indexPaths();
   activate(tabs.find(tab => tab.path === previous.active) ?? tabs[0]);
@@ -477,7 +503,18 @@ on('new-form', 'submit', event => {
 on('new-path', 'input', () => get('new-path').setCustomValidity(''));
 on('cancel-new', 'click', () => { get('new-path').setCustomValidity(''); get('new-dialog').close(); });
 
+function quickNote() {
+  const stamp = new Date().toISOString().slice(0, 23).replaceAll(':', '-').replace('T', ' ');
+  const path = notePath((settings.inbox ? settings.inbox + '/' : '') + 'Notat ' + stamp);
+  tabs.push({ path, mode: 'edit', dirty: true, state: makeState('') });
+  activate(tabs.at(-1));
+  if (narrow.matches) setSidebar(false);
+  editor.focus();
+}
+on('quick-note', 'click', quickNote);
+
 const commands = [
+  ['Hurtignotat', quickNote],
   ['Nytt notat', newNote], ['Åpne hurtig', () => showPalette('notes'), 'Ctrl+O'],
   ['Vis eller skjul filer', toggleSidebar], ['Bytt lesemodus', switchMode],
   ['Synk aktivt notat', saveNote, 'Ctrl+S'], ['Bytt vault', showLogin],
@@ -507,7 +544,7 @@ function renderResults() {
   else {
     if (paletteMode === 'notes' && query) items = searchIndex;
     else {
-      const candidates = paletteMode === 'tabs' ? tabs.map(tab => tab.path) : [...new Set([...recent, ...paths.slice(0, 80)])];
+      const candidates = paletteMode === 'tabs' ? tabs.map(tab => tab.path) : paletteMode === 'links' ? linkCandidates : [...new Set([...recent, ...paths.slice(0, 80)])];
       items = candidates.map(path => ({ path, label: nameOf(path), detail: parentOf(path) }));
     }
   }
@@ -539,7 +576,7 @@ function selectResult(index) {
 }
 function showPalette(mode) {
   paletteMode = mode;
-  get('palette-title').textContent = { notes: 'Finn notat', commands: 'Kommandopalett', tabs: 'Åpne faner' }[mode];
+  get('palette-title').textContent = { notes: 'Finn notat', commands: 'Kommandopalett', tabs: 'Åpne faner', links: 'Velg lenkemål' }[mode];
   get('query').value = '';
   renderResults();
   if (!get('palette').open) get('palette').showModal();

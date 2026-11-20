@@ -12,7 +12,7 @@
 <button id="sidebar" aria-label="Vis eller skjul filer" aria-expanded="true" hidden>☰</button>
 <strong>SyvendeSans</strong><span id="vault-name"></span>
 <span class="spacer"></span>
-<button id="find" hidden>Finn notat</button><button id="command" hidden>Kommandoer</button>
+<button id="quick-note" hidden>Hurtignotat</button><button id="find" hidden>Finn notat</button><button id="command" hidden>Kommandoer</button>
 <button id="mobile-tabs" hidden>Faner</button>
 </header>
 <main id="login">
@@ -43,7 +43,7 @@
 </div>
 </section>
 </main>
-<footer id="status" role="status" aria-live="polite"></footer>
+<footer><span id="status" role="status" aria-live="polite"></span><span id="local-status"></span></footer>
 <dialog id="palette"><form method="dialog" class="dialog-head"><strong id="palette-title"></strong><button aria-label="Lukk">×</button></form><input id="query" aria-label="Søk"><div id="results"></div></dialog>
 <dialog id="new-dialog"><form id="new-form"><label>Sti til nytt notat<input id="new-path" required></label><div class="actions"><button type="submit" class="primary">Opprett</button><button id="cancel-new" type="button">Avbryt</button></div></form></dialog>
 <dialog id="preferences"><form id="preferences-form"><h2>Vault-innstillinger</h2>

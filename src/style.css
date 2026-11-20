@@ -53,3 +53,7 @@ dialog::backdrop { background:#0007 }
   #mobile-tabs { display:block }
   #document { padding:1rem }
 }
+footer { display:flex; flex-wrap:wrap; gap:.15rem .8rem; align-items:center; min-height:2rem; padding:.35rem .8rem; border-top:1px solid var(--line); background:var(--panel); }
+footer #status { padding:0; min-height:0; border:0; }
+#local-status { font-size:.83rem; color:var(--quiet); }
+.wiki-link { display:inline; padding:0; border:0; background:transparent; color:var(--focus); text-decoration:underline; }
