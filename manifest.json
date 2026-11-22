@@ -1,0 +1,97 @@
+{
+  "name": "SyvendeSans Noteriv Plugins",
+  "plugins": [
+    {
+      "id": "mermaid-diagrams",
+      "name": "Mermaid Diagrams",
+      "description": "Render Mermaid diagrams offline and insert diagram templates.",
+      "author": "Noteriv",
+      "version": "0.1.0",
+      "dir": "plugins/mermaid-diagrams",
+      "files": [
+        "README.md",
+        "engine-0.txt",
+        "engine-1.txt",
+        "engine-10.txt",
+        "engine-11.txt",
+        "engine-12.txt",
+        "engine-2.txt",
+        "engine-3.txt",
+        "engine-4.txt",
+        "engine-5.txt",
+        "engine-6.txt",
+        "engine-7.txt",
+        "engine-8.txt",
+        "engine-9.txt",
+        "engine-LICENSE.txt",
+        "engine-index.json",
+        "fflate-LICENSE.txt",
+        "fflate.js"
+      ]
+    },
+    {
+      "id": "notatverksted",
+      "name": "Notatverksted",
+      "description": "Prøv notatstatistikk, kommandoer og en interaktiv Markdown-sjekkliste.",
+      "author": "Noteriv",
+      "version": "0.1.0",
+      "dir": "plugins/notatverksted",
+      "files": [
+        "LICENSE.txt",
+        "README.md"
+      ]
+    },
+    {
+      "id": "plantuml",
+      "name": "PlantUML",
+      "description": "Render PlantUML diagrams offline and insert diagram templates.",
+      "author": "Noteriv",
+      "version": "0.1.0",
+      "dir": "plugins/plantuml",
+      "files": [
+        "README.md",
+        "engine-0.txt",
+        "engine-1.txt",
+        "engine-10.txt",
+        "engine-11.txt",
+        "engine-12.txt",
+        "engine-13.txt",
+        "engine-14.txt",
+        "engine-15.txt",
+        "engine-16.txt",
+        "engine-17.txt",
+        "engine-18.txt",
+        "engine-19.txt",
+        "engine-2.txt",
+        "engine-20.txt",
+        "engine-21.txt",
+        "engine-22.txt",
+        "engine-23.txt",
+        "engine-3.txt",
+        "engine-4.txt",
+        "engine-5.txt",
+        "engine-6.txt",
+        "engine-7.txt",
+        "engine-8.txt",
+        "engine-9.txt",
+        "engine-LICENSE.txt",
+        "engine-index.json",
+        "fflate-LICENSE.txt",
+        "fflate.js"
+      ]
+    },
+    {
+      "id": "spinnvill-pattern",
+      "name": "Spinnvill Patterns",
+      "description": "Preview Spinnvill PatternSpec JSON in a Noteriv note.",
+      "author": "Noteriv",
+      "version": "0.1.0",
+      "dir": "plugins/spinnvill-pattern",
+      "files": [
+        "README.md",
+        "THIRD-PARTY-LICENSES.txt",
+        "spinnvill-turbin.json"
+      ]
+    }
+  ]
+}
