@@ -1,5 +1,6 @@
 const origin = 'https://api.github.com';
 const encodePath = path => path.split('/').map(encodeURIComponent).join('/');
+const maxModelSize = 20 * 1024 * 1024;
 
 export function gitHubVault(repository, token, request = fetch) {
   if (!/^[\w-]+\/[\w.-]+$/.test(repository) || /\/\.{1,2}$/.test(repository)) {
@@ -7,11 +8,11 @@ export function gitHubVault(repository, token, request = fetch) {
   }
   const root = '/repos/' + encodePath(repository);
 
-  async function api(path, data) {
+  async function api(path, data, { accept = 'application/vnd.github+json', signal, binary = false } = {}) {
     const response = await request(origin + root + path, {
       method: data ? 'PUT' : 'GET',
       headers: {
-        Accept: 'application/vnd.github+json',
+        Accept: accept,
         'X-GitHub-Api-Version': '2022-11-28',
         ...(token ? { Authorization: 'Bearer ' + token } : {}),
         ...(data ? { 'Content-Type': 'application/json' } : {}),
@@ -19,6 +20,7 @@ export function gitHubVault(repository, token, request = fetch) {
       ...(data ? { body: JSON.stringify(data) } : {}),
       redirect: 'error',
       cache: 'no-store',
+      signal,
     });
     if (!response.ok) {
       const message = {
@@ -32,7 +34,7 @@ export function gitHubVault(repository, token, request = fetch) {
       error.status = response.status;
       throw error;
     }
-    return response.json();
+    return binary ? response.arrayBuffer() : response.json();
   }
 
   return {
@@ -53,6 +55,23 @@ export function gitHubVault(repository, token, request = fetch) {
       }
       const bytes = Uint8Array.from(atob(file.content), character => character.charCodeAt(0));
       return { text: new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes), sha: file.sha };
+    },
+    async readBinary(path, ref, signal) {
+      const file = await api('/contents/' + encodePath(path) + '?ref=' + encodeURIComponent(ref), undefined, {
+        accept: 'application/vnd.github.object+json', signal,
+      });
+      if (file.type !== 'file' || !/^[a-f0-9]{40}$/i.test(file.sha) || !Number.isSafeInteger(file.size) || file.size < 0) {
+        throw new Error('Modellen må være en vanlig fil i vaultet.');
+      }
+      if (file.size > maxModelSize) throw new Error('3D-modellen må være på maks 20 MB.');
+      const bytes = await api('/git/blobs/' + file.sha, undefined, {
+        accept: 'application/vnd.github.raw+json', signal, binary: true,
+      });
+      if (bytes.byteLength !== file.size) throw new Error('Modellfilen kunne ikke lastes inn i sin helhet.');
+      if (bytes.byteLength < 256 && new TextDecoder().decode(bytes).startsWith('version https://git-lfs.github.com/spec/v1')) {
+        throw new Error('3D-viseren støtter foreløpig bare modeller lagret direkte i Git.');
+      }
+      return bytes;
     },
     async write(path, ref, text, sha) {
       const bytes = new TextEncoder().encode(text);

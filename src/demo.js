@@ -17,6 +17,9 @@ export function demoVault() {
       error.status = 404;
       throw error;
     },
+    async readBinary() {
+      throw new Error('Åpne et GitHub-vault med en STL- eller STEP-fil for å vise en 3D-modell.');
+    },
     async write(path, _ref, text, sha) {
       if (files[path]?.sha !== sha) throw new Error('Filen er endret. Utkastet er beholdt.');
       const next = { text, sha: crypto.randomUUID() };
