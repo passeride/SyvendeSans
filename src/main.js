@@ -5,6 +5,7 @@ import { EditorState } from '@codemirror/state';
 import { gitHubVault, notePath } from './github.js';
 import { readLocal, seal, unseal } from './storage.js';
 import { wikilink, resolveWikilink } from './wikilinks.js';
+import { mountCadBlocks } from './plugins/cad-viewer/index.js';
 import './style.css';
 
 const get = id => document.getElementById(id);
@@ -19,6 +20,7 @@ let settings = defaults, settingsSha, settingsReady = Promise.resolve(), vault, 
 let tabs = [], active, paths = [], searchIndex = [], rows = [], folders, recent = [], expanded = new Set();
 let recentMode = false, paletteMode, selected = 0, results = [], storeTimer, searchTimer, saveSettingsBusy = false;
 let sidebarTouched = false, linkCandidates = [];
+let previewRequest;
 const narrow = matchMedia('(max-width:700px)');
 const extensions = [
   basicSetup, markdown(), EditorView.lineWrapping,
@@ -193,6 +195,7 @@ function activate(tab) {
 }
 
 function showActive() {
+  clearPreview();
   renderLocalStatus();
   get('document').hidden = !active;
   get('empty').hidden = !!active;
@@ -214,12 +217,19 @@ function showActive() {
   status(active.error ?? (active.saving ? 'Synker …' : active.dirty ? 'Bruk Synk nå for å lagre til vaultet' : (ref === 'demo' ? 'Lagret i demoen' : 'Synket med GitHub')));
 }
 
+function clearPreview() {
+  previewRequest?.abort();
+  previewRequest = undefined;
+  get('preview').replaceChildren();
+}
+
 async function preview(tab) {
   const target = get('preview');
   const state = tab.state;
-  target.replaceChildren();
+  const client = vault, branch = ref;
+  const { signal } = previewRequest = new AbortController();
   const [{ Marked }, { default: DOMPurify }] = await Promise.all([import('marked'), import('dompurify')]);
-  if (active !== tab || tab.mode !== 'read' || tab.state !== state) return;
+  if (signal.aborted) return;
   target.innerHTML = DOMPurify.sanitize(new Marked({ extensions: [wikilink] }).parse(state.doc.toString()), {
     FORBID_TAGS: ['img', 'audio', 'video', 'source', 'style', 'input', 'form', 'svg', 'math'],
     FORBID_ATTR: ['style', 'src', 'srcset', 'poster', 'ping'],
@@ -237,6 +247,7 @@ async function preview(tab) {
       showPalette('links');
     };
   }
+  mountCadBlocks(target, tab.path, (path, signal) => client.readBinary(path, branch, signal), signal);
 }
 
 async function loadNote(tab) {
@@ -348,7 +359,7 @@ function showLogin() {
   tabs = [];
   vault = undefined;
   sessionKey = undefined;
-  get('preview').replaceChildren();
+  clearPreview();
   editor.setState(makeState(''));
   get('workspace').hidden = true;
   get('login').hidden = false;

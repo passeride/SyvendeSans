@@ -55,3 +55,35 @@ test('constrains new notes to visible relative Markdown paths', () => {
     assert.throws(() => notePath(path));
   }
 });
+
+test('reads CAD as raw bytes from the selected vault branch', async () => {
+  const bytes = Uint8Array.of(0, 128, 255);
+  const sha = 'abcd'.repeat(10);
+  const { signal } = new AbortController();
+  const urls = [];
+  const vault = gitHubVault('example/obsidian', 'test-token', async (url, options) => {
+    urls.push(url);
+    assert.equal(options.signal, signal);
+    assert.equal(options.headers.Authorization, 'Bearer test-token');
+    if (urls.length === 1) {
+      assert.equal(options.headers.Accept, 'application/vnd.github.object+json');
+      return Response.json({ type: 'file', sha, size: bytes.length });
+    }
+    assert.equal(options.headers.Accept, 'application/vnd.github.raw+json');
+    return new Response(bytes);
+  });
+  const result = await vault.readBinary('Vedlegg/Øvre #1.step', 'test/mobile', signal);
+  assert.deepEqual(new Uint8Array(result), bytes);
+  assert.deepEqual(urls, [
+    'https://api.github.com/repos/example/obsidian/contents/Vedlegg/%C3%98vre%20%231.step?ref=test%2Fmobile',
+    'https://api.github.com/repos/example/obsidian/git/blobs/' + sha,
+  ]);
+});
+
+test('rejects oversized CAD attachments before downloading a blob', async () => {
+  const vault = gitHubVault('example/obsidian', '', async url => {
+    assert.match(url, /\/contents\//);
+    return Response.json({ type: 'file', sha: 'abcd'.repeat(10), size: 21 * 1024 * 1024 });
+  });
+  await assert.rejects(vault.readBinary('modell.step', 'main'), /20 MB/);
+});

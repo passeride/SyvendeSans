@@ -50,3 +50,24 @@ lagres i `.syvende-sans/settings.json` på vaultets valgte gren. Bruk «Synk nå
 eller Ctrl+S for å lagre notater. Se [UX-skissen](docs/UX_ARBEIDSFLATE.md) for
 videre arbeid med innlogging, appinnstillinger og synk. Wikilenker, vedlegg og
 backlinks ligger i arbeidsplanen.
+
+### Vis 3D-modeller i notater
+
+Legg en STL- eller STEP-fil i samme GitHub-vault som notatet, og legg inn en
+\`cad\`-kodeblokk med vault-stien på én linje:
+
+\`\`\`markdown
+\`\`\`cad
+Vedlegg/klokkeholder.step
+\`\`\`
+\`\`\`
+
+En sti som starter med \`./\` eller \`../\` regnes fra notatets mappe. Velg
+**Les → Vis 3D** for å rotere, zoome og åpne modellen i fullskjerm. Viseren
+støtter STL, STEP og STP opp til 20 MB som vanlige filer i Git. Modellen tolkes
+på enheten. Eksporter STEP fra FreeCAD, MitCad eller SolidCraft for å vise
+modellen i notatet.
+
+Viseren bruker [Three.js](https://github.com/mrdoob/three.js) og
+[occt-import-js med Open CASCADE](https://github.com/kovacsv/occt-import-js/tree/c2148e54b456b571238d35cac037d304053d64b2).
+Lisensene følger med bygget i \`dist/licenses/\`.
