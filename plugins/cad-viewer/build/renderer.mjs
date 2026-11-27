@@ -7,16 +7,107 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 import { readFreeCad } from './freecad.mjs';
 
-function stepMesh(mesh) {
+const palette = [0x83bacd, 0xec9a62, 0xa9cb77, 0xb9a1e2, 0xe480a8, 0xe3c565, 0x63bca4, 0x8fabe8, 0xcdad91, 0xdf8177];
+
+function fallbackColor(index) {
+  return index < palette.length ? new Color(palette[index])
+    : new Color().setHSL(index * 0.61803398875 % 1, 0.6, 0.66, SRGBColorSpace);
+}
+
+function savedColor(rgb) {
+  return new Color().setRGB(...rgb, SRGBColorSpace);
+}
+
+function savedColorsAreUniform(parts) {
+  if (parts.length < 2) return false;
+  let first;
+  for (const part of parts) {
+    const colors = [part.color, ...part.mesh.brep_faces.map(face => face.color)].filter(Boolean);
+    if (!colors.length) return false;
+    for (const color of colors) {
+      const key = color.map(channel => Math.round(channel * 255)).join(',');
+      if (first === undefined) first = key;
+      else if (key !== first) return false;
+    }
+  }
+  return true;
+}
+
+function faceMaterials(geometry, faces, base) {
+  const materials = [new MeshStandardMaterial({ color: base })];
+  const indices = new Map([[base.getHex(), 0]]);
+  let cursor = 0;
+  function addGroup(start, count, index) {
+    if (!count) return;
+    const last = geometry.groups.at(-1);
+    if (last && last.materialIndex === index && last.start + last.count === start) last.count += count;
+    else geometry.addGroup(start, count, index);
+  }
+  for (const face of faces) {
+    if (!face.color) continue;
+    const start = face.first * 3, end = (face.last + 1) * 3;
+    if (start < cursor || start >= end || end > geometry.index.count) continue;
+    const color = savedColor(face.color);
+    const key = color.getHex();
+    if (!indices.has(key)) {
+      indices.set(key, materials.length);
+      materials.push(new MeshStandardMaterial({ color }));
+    }
+    addGroup(cursor, start - cursor, 0);
+    addGroup(start, end - start, indices.get(key));
+    cursor = end;
+  }
+  addGroup(cursor, geometry.index.count - cursor, 0);
+  return materials;
+}
+
+function solidMesh(mesh, color, useSavedFaces) {
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new BufferAttribute(Float32Array.from(mesh.attributes.position.array), 3));
   const normal = mesh.attributes.normal;
   if (normal) geometry.setAttribute('normal', new BufferAttribute(Float32Array.from(normal.array), 3));
   geometry.setIndex(new BufferAttribute(Uint32Array.from(mesh.index.array), 1));
   if (!normal) geometry.computeVertexNormals();
-  return new Mesh(geometry, new MeshStandardMaterial({
-    color: mesh.color ? new Color().setRGB(...mesh.color, SRGBColorSpace).lerp(new Color(0xc5d8ec), 0.22) : 0x83bacd,
-  }));
+  const material = useSavedFaces && mesh.brep_faces.some(face => face.color)
+    ? faceMaterials(geometry, mesh.brep_faces, color)
+    : new MeshStandardMaterial({ color });
+  return new Mesh(geometry, material);
+}
+
+export function buildModel(bytes, importer, unzip) {
+  const model = new Group();
+  let skipped = 0;
+  if (importer) {
+    let parts;
+    if (unzip) {
+      const result = readFreeCad(bytes, importer, unzip);
+      skipped = result.skipped;
+      parts = result.parts.flatMap(({ meshes, matrix, color }) => meshes.map(mesh => ({ mesh, matrix, color })));
+    } else {
+      const result = importer.ReadStepFile(bytes, null);
+      if (!result.success || !result.meshes?.length) throw new Error('STEP-filen inneholder ingen lesbar geometri.');
+      parts = result.meshes.map(mesh => ({ mesh, color: mesh.color }));
+    }
+    const useSavedColors = !savedColorsAreUniform(parts);
+    parts.forEach(({ mesh, matrix, color }, index) => {
+      const base = useSavedColors && color ? savedColor(color) : fallbackColor(index);
+      const solid = solidMesh(mesh, base, useSavedColors);
+      if (matrix) solid.applyMatrix4(matrix);
+      model.add(solid);
+    });
+  } else {
+    let geometry;
+    try { geometry = new STLLoader().parse(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)); }
+    catch { throw new Error('Kunne ikke lese STL-filen.'); }
+    geometry.computeVertexNormals();
+    const material = geometry.getAttribute('color')
+      ? new MeshStandardMaterial({ vertexColors: true })
+      : geometry.groups.length > 1
+        ? geometry.groups.map((_, index) => new MeshStandardMaterial({ color: fallbackColor(index) }))
+        : new MeshStandardMaterial({ color: fallbackColor(0) });
+    model.add(new Mesh(geometry, material));
+  }
+  return { model, skipped };
 }
 
 export function fitDistance(corners, direction, up, fov, aspect) {
@@ -48,32 +139,13 @@ function defaultView(size, portrait) {
 }
 
 export function createViewer(stage, bytes, importer, unzip) {
-  const model = new Group();
-  let skipped = 0;
-  if (unzip) {
-    const result = readFreeCad(bytes, importer, unzip);
-    skipped = result.skipped;
-    for (const { mesh, matrix } of result.meshes) {
-      const part = stepMesh(mesh);
-      part.applyMatrix4(matrix);
-      model.add(part);
-    }
-  } else if (importer) {
-    const result = importer.ReadStepFile(bytes, null);
-    if (!result.success || !result.meshes?.length) throw new Error('STEP-filen inneholder ingen lesbar geometri.');
-    for (const mesh of result.meshes) model.add(stepMesh(mesh));
-  } else {
-    let geometry;
-    try { geometry = new STLLoader().parse(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)); }
-    catch { throw new Error('Kunne ikke lese STL-filen.'); }
-    geometry.computeVertexNormals();
-    model.add(new Mesh(geometry, new MeshStandardMaterial({ color: 0x83bacd })));
-  }
+  const { model, skipped } = buildModel(bytes, importer, unzip);
 
   const disposeModel = () => {
     for (const mesh of model.children) {
       mesh.geometry.dispose();
-      mesh.material.dispose();
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      for (const material of materials) material.dispose();
     }
   };
   const box = new Box3().setFromObject(model);

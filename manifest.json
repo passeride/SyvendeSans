@@ -6,7 +6,7 @@
       "name": "CAD Viewer",
       "description": "Vis STL-, STEP- og FreeCAD-modeller fra vaultet i Noteriv.",
       "author": "SyvendeSans",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "dir": "plugins/cad-viewer",
       "files": [
         "README.md",

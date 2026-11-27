@@ -16,6 +16,8 @@ Desktop støtter binær og ASCII STL samt STEP (`.step`, `.stp`) opp til 20 MiB.
 
 Pluginen tolker filene lokalt og fungerer frakoblet etter installasjon. Den bruker [Three.js](https://github.com/mrdoob/three.js), [occt-import-js med Open CASCADE](https://github.com/kovacsv/occt-import-js/tree/c2148e54b456b571238d35cac037d304053d64b2) og [fflate](https://github.com/101arrowz/fflate). Lisensfilene følger med pluginen.
 
+CAD Viewer bruker lagrede del- og flatefarger i FreeCAD og STEP der de finnes. Hvis alle delene har samme farge, får de ulike farger fra en fast palett. STL bruker lagrede binærfarger eller fargelegger separate `solid`-grupper i ASCII-filer.
+
 ## Bygg motorfilene på nytt
 
 Kjør `npm ci` og `npm run build` i `build/`. Byggeskriptet oppdaterer også pluginens ressursliste i katalogen.

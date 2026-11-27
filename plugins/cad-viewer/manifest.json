@@ -1,7 +1,7 @@
 {
   "id": "cad-viewer",
   "name": "CAD Viewer",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Vis STL-, STEP- og FreeCAD-modeller fra vaultet i Noteriv.",
   "author": "SyvendeSans",
   "main": "main.js",
