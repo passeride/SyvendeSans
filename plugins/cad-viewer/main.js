@@ -1,11 +1,11 @@
 const maxBytes = 20 * 1024 * 1024;
-const formats = /\.(stl|step|stp)$/i;
+const formats = /\.(stl|step|stp|fcstd)$/i;
 const assetError = 'Installer CAD Viewer på nytt fra Noteriv-pluginlisten.';
 
 function modelPath(source, notePath) {
   const path = source.trim();
   if (!formats.test(path) || /[\\:\x00-\x1f\x7f]/.test(path) || path.startsWith('//')) {
-    throw new Error('Skriv én vault-sti til en STL-, STEP- eller STP-fil.');
+    throw new Error('Skriv én vault-sti til en STL-, STEP- eller FCStd-fil.');
   }
   const relative = path.startsWith('./') || path.startsWith('../');
   if (relative && !notePath) throw new Error('Bruk en sti fra roten av vaultet.');
@@ -35,6 +35,7 @@ async function readModel(api, path, type) {
     if (base64?.length > Math.ceil(maxBytes / 3) * 4) throw new Error('Modellen kan være opptil 20 MiB.');
     if (base64) bytes = decode(base64);
   } else {
+    if (type === 'fcstd') throw new Error('Denne filen krever en Noteriv-versjon med binær fillesing.');
     const content = await api.vault.read(path);
     if (type === 'stl' && (content === null || !/^\s*solid\b[\s\S]*\bendsolid\b/i.test(content) || /[\u0000\ufffd]/.test(content))) {
       throw new Error('Denne Noteriv-versjonen leser STL fra vaultet som tekst. Bruk ASCII STL eller STEP.');
@@ -68,12 +69,15 @@ function engines(assets) {
       const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
       return new Uint8Array(await new Response(stream).arrayBuffer());
     }
+    return (await compression()).gunzipSync(bytes);
+  }
+  function compression() {
     fflate ??= read('fflate.js').then(code => {
       const module = { exports: {} };
       new Function('module', 'exports', code)(module, module.exports);
-      return module.exports.gunzipSync;
+      return module.exports;
     }).catch(error => { fflate = undefined; throw error; });
-    return (await fflate)(bytes);
+    return fflate;
   }
   return {
     renderer() {
@@ -82,6 +86,7 @@ function engines(assets) {
       ).catch(error => { renderer = undefined; throw error; });
       return renderer;
     },
+    compression,
     step() {
       step ??= Promise.all([read('occt.js'), unpack('wasm')]).then(([glue, wasmBinary]) => {
         const module = { exports: {} };
@@ -144,11 +149,15 @@ function mount(api, engine, source, container, context) {
     try {
       const [renderer, bytes] = await Promise.all([engine.renderer(), readModel(api, path, type)]);
       if (controller.signal.aborted) return;
-      const importer = type === 'stl' ? null : await engine.step();
+      const [importer, compression] = await Promise.all([
+        type === 'stl' ? null : engine.step(),
+        type === 'fcstd' ? engine.compression() : null,
+      ]);
       if (controller.signal.aborted) return;
       stage.hidden = false;
-      viewer = renderer.createViewer(stage, bytes, importer);
-      status.textContent = '';
+      viewer = renderer.createViewer(stage, bytes, importer, compression?.unzipSync);
+      status.textContent = viewer.skipped ? 'Noen FreeCAD-deler kunne ikke vises.' : '';
+      if (viewer.skipped && viewport) status.style.top = '1rem';
       reset.hidden = false;
       expand.hidden = api.app.platform === 'mobile' || typeof dialog.showModal !== 'function';
     } catch (error) {

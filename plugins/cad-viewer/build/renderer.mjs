@@ -5,6 +5,7 @@ import {
 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+import { readFreeCad } from './freecad.mjs';
 
 function stepMesh(mesh) {
   const geometry = new BufferGeometry();
@@ -46,9 +47,18 @@ function defaultView(size, portrait) {
   return { direction: new Vector3(1, -1.4, 0.9).normalize(), up: new Vector3(0, 0, 1) };
 }
 
-export function createViewer(stage, bytes, importer) {
+export function createViewer(stage, bytes, importer, unzip) {
   const model = new Group();
-  if (importer) {
+  let skipped = 0;
+  if (unzip) {
+    const result = readFreeCad(bytes, importer, unzip);
+    skipped = result.skipped;
+    for (const { mesh, matrix } of result.meshes) {
+      const part = stepMesh(mesh);
+      part.applyMatrix4(matrix);
+      model.add(part);
+    }
+  } else if (importer) {
     const result = importer.ReadStepFile(bytes, null);
     if (!result.success || !result.meshes?.length) throw new Error('STEP-filen inneholder ingen lesbar geometri.');
     for (const mesh of result.meshes) model.add(stepMesh(mesh));
@@ -132,6 +142,7 @@ export function createViewer(stage, bytes, importer) {
   resize();
   return {
     reset,
+    skipped,
     dispose() {
       observer.disconnect();
       controls.dispose();
