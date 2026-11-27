@@ -1,0 +1,9 @@
+{
+  "id": "cad-viewer",
+  "name": "CAD Viewer",
+  "version": "0.1.0",
+  "description": "Vis STL- og STEP-modeller fra vaultet i Noteriv.",
+  "author": "SyvendeSans",
+  "main": "main.js",
+  "codeBlockLanguages": ["cad"]
+}

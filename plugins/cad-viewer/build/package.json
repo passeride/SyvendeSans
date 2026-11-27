@@ -1,0 +1,12 @@
+{
+  "name": "noteriv-cad-viewer-build",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "node build.mjs" },
+  "dependencies": {
+    "esbuild": "0.28.1",
+    "occt-import-js": "0.0.23",
+    "three": "0.187.0"
+  }
+}
