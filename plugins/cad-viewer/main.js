@@ -102,33 +102,44 @@ function element(parent, tag, text, style) {
 }
 
 function button(parent, text, action) {
-  const node = element(parent, 'button', text, 'min-height:2.5rem;padding:.35rem .6rem;cursor:pointer');
+  const node = element(parent, 'button', text, 'min-height:2.75rem;padding:.45rem .85rem;cursor:pointer;border:1px solid #526373;border-radius:.6rem;background:#202a33;color:#f1f5f9;font:inherit');
   node.type = 'button';
   node.onclick = action;
   return node;
 }
 
 function mount(api, engine, source, container, context) {
-  const block = element(container, 'section', undefined, 'min-width:0;white-space:normal;color:inherit');
+  const viewport = context?.layout === 'viewport';
+  const block = element(container, 'section', undefined, viewport
+    ? 'height:100%;color:#eef4fa;font:14px system-ui,sans-serif;overflow:hidden;background:#171e27'
+    : 'min-width:0;white-space:normal;color:inherit;font:14px system-ui,sans-serif');
   let path;
   try { path = modelPath(source, context?.sourcePath); }
   catch (error) { element(block, 'div', error.message); return () => block.remove(); }
   const type = path.split('.').at(-1).toLowerCase();
-  const panel = element(block, 'div');
-  const bar = element(panel, 'div', undefined, 'display:flex;flex-wrap:wrap;align-items:center;gap:.45rem;padding:.4rem');
+  const panel = element(block, 'div', undefined, viewport ? 'position:relative;height:100%' : '');
+  const bar = element(panel, 'div', undefined, viewport
+    ? 'position:absolute;z-index:1;right:12px;bottom:12px;display:flex;gap:.45rem'
+    : 'display:flex;flex-wrap:wrap;align-items:center;gap:.45rem;padding:.4rem');
   const label = element(bar, 'span', path.split('/').at(-1), 'overflow-wrap:anywhere;margin-inline-end:auto');
   label.title = path;
-  const status = element(panel, 'div', undefined, 'overflow-wrap:anywhere');
+  label.hidden = viewport;
+  const status = element(panel, 'div', undefined, viewport
+    ? 'position:absolute;z-index:1;top:45%;left:1rem;right:1rem;text-align:center;overflow-wrap:anywhere'
+    : 'overflow-wrap:anywhere');
   status.setAttribute('role', 'status');
-  const stage = element(panel, 'div', undefined, 'height:clamp(12rem,55vw,25rem);overflow:hidden;background:#1e272b;border-radius:.4rem');
+  const backdrop = 'overflow:hidden;background:radial-gradient(ellipse at 50% 42%,#303e4d,#171e27)';
+  const stage = element(panel, 'div', undefined, viewport
+    ? 'position:absolute;inset:0;' + backdrop
+    : 'height:clamp(14rem,60vw,30rem);' + backdrop + ';border-radius:.6rem');
   stage.hidden = true;
   const dialog = element(block, 'dialog', undefined, 'box-sizing:border-box;width:calc(100% - 1rem);max-width:none;height:calc(100dvh - 1rem);max-height:none;padding:.5rem');
   dialog.setAttribute('aria-label', '3D-visning av ' + label.textContent);
   const controller = new AbortController();
   let viewer;
 
-  const load = button(bar, 'Vis 3D', async () => {
-    load.disabled = true;
+  async function showModel() {
+    retry.hidden = true;
     status.textContent = 'Laster 3D-modellen …';
     try {
       const [renderer, bytes] = await Promise.all([engine.renderer(), readModel(api, path, type)]);
@@ -138,17 +149,18 @@ function mount(api, engine, source, container, context) {
       stage.hidden = false;
       viewer = renderer.createViewer(stage, bytes, importer);
       status.textContent = '';
-      load.hidden = true;
       reset.hidden = false;
       expand.hidden = api.app.platform === 'mobile' || typeof dialog.showModal !== 'function';
-      reset.focus();
     } catch (error) {
       if (controller.signal.aborted) return;
       stage.hidden = true;
       status.textContent = String(error?.message || error).slice(0, 400);
-    } finally { load.disabled = false; }
-  });
-  const reset = button(bar, 'Nullstill visning', () => viewer?.reset());
+      retry.hidden = false;
+    }
+  }
+  const retry = button(bar, 'Prøv igjen', showModel);
+  const reset = button(bar, 'Tilpass', () => viewer?.reset());
+  reset.setAttribute('aria-label', 'Tilpass modell til visningen');
   const expand = button(bar, 'Fullskjerm', () => {
     if (dialog.open) { dialog.close(); return; }
     dialog.append(panel);
@@ -167,6 +179,7 @@ function mount(api, engine, source, container, context) {
     expand.textContent = 'Fullskjerm';
     expand.focus();
   });
+  void showModel();
   return () => {
     controller.abort();
     if (dialog.open) dialog.close();
